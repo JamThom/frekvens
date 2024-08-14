@@ -256,3 +256,4 @@
 /Users/jamies/Projects/frekvens/FrekvensApi/obj/Debug/net8.0/FrekvensApi.pdb
 /Users/jamies/Projects/frekvens/FrekvensApi/obj/Debug/net8.0/FrekvensApi.genruntimeconfig.cache
 /Users/jamies/Projects/frekvens/FrekvensApi/obj/Debug/net8.0/ref/FrekvensApi.dll
+/Users/jamies/Projects/frekvens/FrekvensApi/obj/Debug/net8.0/FrekvensApi.sourcelink.json

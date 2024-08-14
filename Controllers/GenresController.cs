@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using FrekvensApi.Data;
 using FrekvensApi.Models;
 using Microsoft.EntityFrameworkCore;
+using FrekvensApi.Extensions;
 
 namespace FrekvensApi.Controllers {
     [ApiController]
@@ -13,17 +14,17 @@ namespace FrekvensApi.Controllers {
             _context = context;
         }
 
-        public async Task<ActionResult<Genre>> GetGenre(int id) {
+        public async Task<ActionResult<Genre>> GetGenre(Guid id) {
             var genre = await _context.Genres.FindAsync(id);
 
             if (genre == null) {
-                return NotFound();
+                return this.SendNotFound($"Genre id not found: {id}");
             }
 
             return genre;
         }
 
-        public bool GenreExists(int id) {
+        public bool GenreExists(Guid id) {
             return _context.Genres.Any(e => e.Id == id);
         }
 
@@ -34,17 +35,23 @@ namespace FrekvensApi.Controllers {
 
         [HttpPost]
         public async Task<ActionResult<Genre>> PostGenre(Genre genre) {
+
+            genre.Id = Guid.NewGuid();
+
             _context.Genres.Add(genre);
+
+            var validationResult = this.ValidateModelState();
+            if (validationResult != null) {
+                return validationResult;
+            }
+
             await _context.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetGenre), new { id = genre.Id }, genre);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutGenre(int id, Genre genre) {
-            if (id != genre.Id) {
-                return BadRequest();
-            }
+        public async Task<IActionResult> PutGenre(Guid id, Genre genre) {
 
             _context.Entry(genre).State = EntityState.Modified;
 
@@ -52,7 +59,7 @@ namespace FrekvensApi.Controllers {
                 await _context.SaveChangesAsync();
             } catch (DbUpdateConcurrencyException) {
                 if (!GenreExists(id)) {
-                    return NotFound();
+                    return this.SendNotFound($"Genre id not found: {id}");
                 } else {
                     throw;
                 }
@@ -62,11 +69,17 @@ namespace FrekvensApi.Controllers {
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteGenre(int id) {
+        public async Task<IActionResult> DeleteGenre(Guid id) {
             var genre = await _context.Genres.FindAsync(id);
+            var allGenreIds = await _context.Genres.Select(g => g.Id).ToListAsync();
+            var stations = await _context.Stations.Where(s => s.GenreId == id).ToListAsync();
 
             if (genre == null) {
-                return NotFound();
+                return this.SendBadRequest($"Genre id not found: {id}");
+            }
+
+            if (stations.Count > 0) {
+                return this.SendBadRequest("Genre is in use by stations.");
             }
 
             _context.Genres.Remove(genre);
