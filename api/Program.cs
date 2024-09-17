@@ -39,10 +39,13 @@ app.UseHttpsRedirection();
 // Apply CORS policy before routing
 app.UseCors("AllowAllOrigins");
 
+app.UseAuthentication();
+
 app.UseRouting();
+app.UseAuthorization();
 app.UseEndpoints(endpoints =>
 {
-    endpoints.MapControllers();
+    _ = endpoints.MapControllers();
 });
 
 app.Run();

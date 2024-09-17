@@ -1,9 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using FrekvensApi.Models;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 namespace FrekvensApi.Data
 {
-    public class ApplicationDbContext : DbContext
+    public class ApplicationDbContext : IdentityDbContext
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
