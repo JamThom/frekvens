@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("FrekvensApi")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a6982fab702374c75a117f4a6cf966ef1dde120b")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a7a2a6732ff6d588f152ce8151fca32d42004020")]
 [assembly: System.Reflection.AssemblyProductAttribute("FrekvensApi")]
 [assembly: System.Reflection.AssemblyTitleAttribute("FrekvensApi")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
