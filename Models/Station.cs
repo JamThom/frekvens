@@ -7,15 +7,15 @@ namespace FrekvensApi.Models
     {
         public Guid Id { get; set; }
         [Required]
-        public string Name { get; set; }
+        required public string Name { get; set; }
         [Required]
-        public string Frequency { get; set; }
+        required public string Frequency { get; set; }
         [Required]
-        public string StreamUrl { get; set; }
-        public Boolean IsAvailable { get; set; }
+        required public string StreamUrl { get; set; }
+        public bool IsAvailable { get; set; }
         [Required]
         public Guid GenreId { get; set; }
         [ValidateNever]
-        public Genre Genre { get; set; }
+        required public Genre Genre { get; set; }
     }
 }

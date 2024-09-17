@@ -1,17 +1,23 @@
-
-using System.Net.Mail;
+using System.Net.Http;
 using FrekvensApi.Data;
 using FrekvensApi.Models;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 public class CheckRadioStatusService : BackgroundService
 {
-    private readonly ApplicationDbContext _context;
+    private readonly IServiceProvider _serviceProvider;
     private readonly HttpClient _httpClient;
     public IConfiguration Configuration { get; }
 
-    public CheckRadioStatusService(ApplicationDbContext context, HttpClient httpClient, IConfiguration configuration)
+    public CheckRadioStatusService(IServiceProvider serviceProvider, HttpClient httpClient, IConfiguration configuration)
     {
-        _context = context ?? throw new ArgumentNullException(nameof(context));
+        _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
     }
@@ -27,50 +33,43 @@ public class CheckRadioStatusService : BackgroundService
 
     private async Task CheckRadioStatus(CancellationToken stoppingToken)
     {
-        var stations = _context.Stations.ToList();
+        using var scope = _serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-        var unavailableStations = new List<Station>();
+        var stations = context.Stations.ToList();
 
         foreach (var station in stations)
         {
-
-            try 
+            bool isAvailable = await IsStreamUrlValid(station.StreamUrl);
+            if (station.IsAvailable != isAvailable)
             {
-                var response = _httpClient.GetAsync(station.StreamUrl).Result;
-                response.EnsureSuccessStatusCode();
-                station.IsAvailable = true;
+                station.IsAvailable = isAvailable;
+                context.Entry(station).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
             }
-            catch (HttpRequestException)
-            {
-                unavailableStations.Add(station);
-                station.IsAvailable = false;
-            }
-            
         }
 
-        await SendEmailUpdate(unavailableStations);
-        await _context.SaveChangesAsync(stoppingToken);
+        await context.SaveChangesAsync();
     }
 
-    private async Task SendEmailUpdate(List<Station> unavailableStations)
+    private async Task<bool> IsStreamUrlValid(string streamUrl)
     {
-        if (unavailableStations.Count == 0)
+        try
         {
-            return;
-        }
-    
-        var client = new SmtpClient();
-    
-        var notificationsEmail = Configuration["NotificationsEmail"] ?? string.Empty;
-        
-        var message = new MailMessage
-        {
-            From = new MailAddress(notificationsEmail),
-            Subject = "Radio station status update",
-            Body = "The following stations are currently unavailable:\n- " + string.Join("\n- ", unavailableStations.Select(s => s.Name))
-        };
-    
-        await client.SendMailAsync(message);
-    }
+            var request = new HttpRequestMessage(HttpMethod.Get, streamUrl);
+            var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
 
+            if (!response.IsSuccessStatusCode)
+            {
+
+                return false;
+            }
+
+            return response.Content.Headers.ContentType != null &&
+                   response.Content.Headers.ContentType.MediaType.StartsWith("audio/");
+        }
+        catch
+        {
+            return false;
+        }
+    }
 }

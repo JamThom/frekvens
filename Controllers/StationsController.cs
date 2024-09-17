@@ -52,7 +52,7 @@ namespace FrekvensApi.Controllers
                 return stationUrlError;
             }
 
-            var stationWithFrequency = await StationFrequencyUnavailable(station.Frequency);
+            var stationWithFrequency = await StationFrequencyUnavailable(station);
             if (stationWithFrequency != null)
             {
                 return this.SendBadRequest("A station with the same frequency already exists.");
@@ -79,16 +79,24 @@ namespace FrekvensApi.Controllers
                 return validationResult;
             }
 
-            var stationUrlError = await StationUrlError(station.StreamUrl);
-            if (stationUrlError != null)
-            {
-                return stationUrlError;
-            }
+            var streamUrlChanged = _context.Entry(station).Property(s => s.StreamUrl).IsModified;
 
-            var stationWithFrequency = StationFrequencyUnavailable(station.Frequency);
+            var stationWithFrequency = await StationFrequencyUnavailable(station);
             if (stationWithFrequency != null)
             {
                 return this.SendBadRequest("A station with the same frequency already exists.");
+            }
+
+            if (station.IsAvailable || streamUrlChanged)
+            {
+
+                var stationUrlError = await StationUrlError(station.StreamUrl);
+                if (stationUrlError != null)
+                {
+                    return stationUrlError;
+                } else {
+                    station.IsAvailable = true;
+                }
             }
 
             try
@@ -137,20 +145,35 @@ namespace FrekvensApi.Controllers
                 return this.SendBadRequest($"The stream URL is not valid.");
             }
 
-            HttpClient client = new();
+            using HttpClient client = new();
 
-            try {
-                var response = await client.GetAsync(streamUrl);
-            } catch (Exception e) {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, streamUrl);
+                var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    return this.SendBadRequest($"The stream URL is not reachable. Status code: {response.StatusCode}");
+                }
+
+                if (response.Content.Headers.ContentType == null ||
+                    !response.Content.Headers.ContentType.MediaType.StartsWith("audio/"))
+                {
+                    return this.SendBadRequest($"The stream URL does not point to an audio stream. Content-Type: {response.Content.Headers.ContentType}");
+                }
+            }
+            catch (Exception e)
+            {
                 return this.SendBadRequest($"The stream URL is not valid: {e.Message}");
             }
 
             return null;
         }
 
-        private async Task<ActionResult?> StationFrequencyUnavailable(string frequency)
+        private async Task<ActionResult?> StationFrequencyUnavailable(Station station)
         {
-            var matchingStation = await _context.Stations.FirstOrDefaultAsync(s => s.Frequency == frequency);
+            var matchingStation = await _context.Stations.FirstOrDefaultAsync(s => s.Frequency == station.Frequency && s.Id != station.Id);
             if (matchingStation != null)
             {
                 return this.SendBadRequest("A station with the same frequency already exists.");

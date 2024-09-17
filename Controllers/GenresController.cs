@@ -14,6 +14,7 @@ namespace FrekvensApi.Controllers {
             _context = context;
         }
 
+        [HttpGet("{id}")]
         public async Task<ActionResult<Genre>> GetGenre(Guid id) {
             var genre = await _context.Genres.FindAsync(id);
 
@@ -22,10 +23,6 @@ namespace FrekvensApi.Controllers {
             }
 
             return genre;
-        }
-
-        public bool GenreExists(Guid id) {
-            return _context.Genres.Any(e => e.Id == id);
         }
 
         [HttpGet]
@@ -58,7 +55,7 @@ namespace FrekvensApi.Controllers {
             try {
                 await _context.SaveChangesAsync();
             } catch (DbUpdateConcurrencyException) {
-                if (!GenreExists(id)) {
+                if (_context.Genres.Any(e => e.Id == id) == false) {
                     return this.SendNotFound($"Genre id not found: {id}");
                 } else {
                     throw;

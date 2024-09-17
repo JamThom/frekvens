@@ -22,6 +22,9 @@ builder.Services.AddCors(options =>
         });
 });
 
+builder.Services.AddHttpClient();
+builder.Services.AddHostedService<CheckRadioStatusService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

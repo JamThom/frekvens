@@ -28,6 +28,7 @@ public class Startup
                 });
         });
 
+        services.AddHttpClient();
         services.AddHostedService<CheckRadioStatusService>();
     }
 
