@@ -32,7 +32,7 @@ namespace FrekvensApi.Controllers {
                 return Unauthorized();
             }
 
-            var genreDto = new Genre {
+            var genreDto = new GenreDto {
                 Id = genre.Id,
                 Name = genre.Name
             };
@@ -41,10 +41,14 @@ namespace FrekvensApi.Controllers {
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Genre>>> GetGenre() {
+        public async Task<ActionResult<IEnumerable<GenreDto>>> GetGenre() {
             var user = await _userManager.GetUserAsync(User);
-            var genres = await _context.Genres.ToListAsync();
-            return genres.Where(g => g.CreatedBy.Id == user.Id).ToList();
+            var genres = await _context.Genres.Where(g => g.CreatedBy.Id == user.Id).ToListAsync();
+            return genres
+                .Select(g => new GenreDto {
+                    Id = g.Id,
+                    Name = g.Name
+                }).ToList();
         }
 
         [HttpPost]

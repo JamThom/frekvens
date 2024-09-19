@@ -61,7 +61,7 @@ public class Startup
                 });
         });
 
-        services.AddIdentity<IdentityUser, IdentityRole>()
+        services.AddIdentity<ApplicationUser, IdentityRole>()
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddDefaultTokenProviders();
 

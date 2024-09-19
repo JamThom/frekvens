@@ -23,15 +23,24 @@ namespace FrekvensApi.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Station>>> GetStations()
+        public async Task<ActionResult<IEnumerable<StationDto>>> GetStations()
         {
             var user = await _userManager.GetUserAsync(User);
-            var stations = await _context.Stations.ToListAsync();
-            return stations.Where(s => s.CreatedBy.Id == user.Id).ToList();
+            var stations = await _context.Stations.Where(s => s.CreatedBy.Id == user.Id).ToListAsync();
+            return stations
+                .Select(s => new StationDto
+                {
+                    Id = s.Id,
+                    Name = s.Name,
+                    Frequency = s.Frequency,
+                    StreamUrl = s.StreamUrl,
+                    IsAvailable = s.IsAvailable,
+                    GenreId = s.GenreId
+                }).ToList();
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Station>> GetStation(Guid id)
+        public async Task<ActionResult<StationDto>> GetStation(Guid id)
         {
             var user = await _userManager.GetUserAsync(User);
             var station = await _context.Stations.FindAsync(id);
@@ -46,7 +55,15 @@ namespace FrekvensApi.Controllers
                 return Unauthorized();
             }
 
-            return station;
+            return new StationDto
+            {
+                Id = station.Id,
+                Name = station.Name,
+                Frequency = station.Frequency,
+                StreamUrl = station.StreamUrl,
+                IsAvailable = station.IsAvailable,
+                GenreId = station.GenreId
+            };
         }
 
         [HttpPost]
@@ -119,7 +136,9 @@ namespace FrekvensApi.Controllers
                 if (stationUrlError != null)
                 {
                     return stationUrlError;
-                } else {
+                }
+                else
+                {
                     station.IsAvailable = true;
                 }
             }
