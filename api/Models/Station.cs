@@ -17,5 +17,6 @@ namespace FrekvensApi.Models
         public Guid GenreId { get; set; }
         [ValidateNever]
         required public Genre Genre { get; set; }
+        required public ApplicationUser CreatedBy { get; set; }
     }
 }

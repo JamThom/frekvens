@@ -1,14 +1,47 @@
 using FrekvensApi.Data;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "Frekvens API", Version = "v1" });
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        In = ParameterLocation.Header,
+        Description = "Please enter into field the word 'Bearer' followed by a space and the JWT value.",
+        Name = "Authorization",
+        Type = SecuritySchemeType.ApiKey,
+        BearerFormat = "JWT",
+        Scheme = "Bearer"
+    });
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] { }
+        }
+    });
+});
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddAuthorization();
+
+builder.Services.AddIdentityApiEndpoints<IdentityUser>()
+    .AddEntityFrameworkStores<ApplicationDbContext>();
 
 // Add CORS policy
 builder.Services.AddCors(options =>
@@ -26,6 +59,8 @@ builder.Services.AddHttpClient();
 builder.Services.AddHostedService<CheckRadioStatusService>();
 
 var app = builder.Build();
+
+app.MapIdentityApi<IdentityUser>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

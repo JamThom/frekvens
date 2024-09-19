@@ -3,34 +3,47 @@ using FrekvensApi.Data;
 using FrekvensApi.Models;
 using Microsoft.EntityFrameworkCore;
 using FrekvensApi.Extensions;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 
 namespace FrekvensApi.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("stations")]
     public class StationsController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public StationsController(ApplicationDbContext context)
+        public StationsController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Station>>> GetStations()
         {
-            return await _context.Stations.ToListAsync();
+            var user = await _userManager.GetUserAsync(User);
+            var stations = await _context.Stations.ToListAsync();
+            return stations.Where(s => s.CreatedBy.Id == user.Id).ToList();
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<Station>> GetStation(Guid id)
         {
+            var user = await _userManager.GetUserAsync(User);
             var station = await _context.Stations.FindAsync(id);
 
             if (station == null)
             {
                 return this.SendNotFound($"Station id not found: {id}");
+            }
+
+            if (station.CreatedBy.Id != user.Id)
+            {
+                return Unauthorized();
             }
 
             return station;
@@ -39,6 +52,11 @@ namespace FrekvensApi.Controllers
         [HttpPost]
         public async Task<ActionResult<Station>> PostStation(Station station)
         {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return Unauthorized();
+            }
 
             var validationResult = this.ValidateModelState();
             if (validationResult != null)
@@ -59,6 +77,7 @@ namespace FrekvensApi.Controllers
             }
 
             station.IsAvailable = true;
+            station.CreatedBy = user;
 
             _context.Stations.Add(station);
             await _context.SaveChangesAsync();
@@ -69,6 +88,12 @@ namespace FrekvensApi.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutStation(Guid id, Station station)
         {
+            var user = await _userManager.GetUserAsync(User);
+            if (station.CreatedBy.Id != user.Id)
+            {
+                return Unauthorized();
+            }
+
             station.Id = id;
 
             _context.Entry(station).State = EntityState.Modified;
@@ -121,10 +146,16 @@ namespace FrekvensApi.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteStation(Guid id)
         {
+            var user = await _userManager.GetUserAsync(User);
             var station = await _context.Stations.FindAsync(id);
             if (station == null)
             {
                 return this.SendNotFound($"Station id not found: {id}");
+            }
+
+            if (station.CreatedBy.Id != user.Id)
+            {
+                return Unauthorized();
             }
 
             _context.Stations.Remove(station);

@@ -3,6 +3,7 @@ using System;
 using FrekvensApi.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FrekvensApi.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240919091045_Initial")]
+    partial class Initial
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.8");
@@ -23,17 +26,11 @@ namespace FrekvensApi.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("CreatedById")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CreatedById");
 
                     b.ToTable("Genres");
                 });
@@ -42,10 +39,6 @@ namespace FrekvensApi.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("CreatedById")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Frequency")
@@ -67,8 +60,6 @@ namespace FrekvensApi.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CreatedById");
 
                     b.HasIndex("GenreId");
 
@@ -136,11 +127,6 @@ namespace FrekvensApi.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Discriminator")
-                        .IsRequired()
-                        .HasMaxLength(21)
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Email")
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
@@ -191,10 +177,6 @@ namespace FrekvensApi.Migrations
                         .HasDatabaseName("UserNameIndex");
 
                     b.ToTable("AspNetUsers", (string)null);
-
-                    b.HasDiscriminator().HasValue("IdentityUser");
-
-                    b.UseTphMappingStrategy();
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
@@ -276,39 +258,13 @@ namespace FrekvensApi.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("FrekvensApi.Models.ApplicationUser", b =>
-                {
-                    b.HasBaseType("Microsoft.AspNetCore.Identity.IdentityUser");
-
-                    b.HasDiscriminator().HasValue("ApplicationUser");
-                });
-
-            modelBuilder.Entity("FrekvensApi.Models.Genre", b =>
-                {
-                    b.HasOne("FrekvensApi.Models.ApplicationUser", "CreatedBy")
-                        .WithMany()
-                        .HasForeignKey("CreatedById")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("CreatedBy");
-                });
-
             modelBuilder.Entity("FrekvensApi.Models.Station", b =>
                 {
-                    b.HasOne("FrekvensApi.Models.ApplicationUser", "CreatedBy")
-                        .WithMany()
-                        .HasForeignKey("CreatedById")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("FrekvensApi.Models.Genre", "Genre")
                         .WithMany()
                         .HasForeignKey("GenreId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("CreatedBy");
 
                     b.Navigation("Genre");
                 });
