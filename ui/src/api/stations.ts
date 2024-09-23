@@ -8,7 +8,8 @@ import useApiPut from './useApiPut';
 import useApiRefresh from './useApiRefresh';
 
 export const useStationsData = () => {
-  return useApiData<Station[]>('stations')?.data;
+  const { data } = useApiData<Station[]>('stations');
+  return data;
 }
 
 export type AddStationBody = Omit<Station, 'id'>;

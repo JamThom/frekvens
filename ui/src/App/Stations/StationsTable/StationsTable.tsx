@@ -1,4 +1,4 @@
-import { Button, Table, Tbody, Td, Th, Thead, Tr } from '@chakra-ui/react'
+import { Table, Tbody, Td, Th, Thead, Tr } from '@chakra-ui/react'
 import { useMemo } from 'react'
 import { useReactTable, flexRender, getCoreRowModel, createColumnHelper } from '@tanstack/react-table';
 import { Station } from '../../../types/Station';
@@ -34,12 +34,28 @@ function StationsTable({
       cell: ({ row: { original } }) => <StationStatus station={original} />
     }),
     columnHelper.accessor('streamUrl', {
-      header: 'Stream URL'
+      header: 'Stream URL',
+      cell: ({ getValue }) => {
+        return (
+          <a href={getValue()} target="_blank" rel="noreferrer">
+            {getValue()}
+          </a>
+        );
+      }
     }),
     columnHelper.accessor('genreId', {
       header: 'Genre',
       cell: ({ getValue }) => {
         return genresData?.find(({ id }) => id === getValue())?.name ?? '';
+      }
+    }),
+    columnHelper.display({
+      id: 'preview',
+      header: 'Preview',
+      cell: ({ getValue }) => {
+        return (
+          <audio autoPlay controls src={getValue() as string} />
+        );
       }
     }),
     columnHelper.display({

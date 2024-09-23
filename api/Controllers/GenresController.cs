@@ -52,17 +52,20 @@ namespace FrekvensApi.Controllers {
         }
 
         [HttpPost]
-        public async Task<ActionResult<Genre>> PostGenre(Genre genre) {
+        public async Task<ActionResult<Genre>> PostGenre(GenreDto genre) {
+
+            Console.WriteLine("HELLLLLLOOOOOOOOOO");
 
             var user = await _userManager.GetUserAsync(User);
             if (user == null) {
                 return Unauthorized();
             }
 
-            genre.Id = Guid.NewGuid();
-            genre.CreatedBy = user;
-
-            _context.Genres.Add(genre);
+            _context.Genres.Add(new Genre {
+                Id = Guid.NewGuid(),
+                Name = genre.Name,
+                CreatedBy = user
+            });
 
             var validationResult = this.ValidateModelState();
             if (validationResult != null) {

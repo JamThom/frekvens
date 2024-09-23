@@ -3,11 +3,16 @@ import NavItem from './NavItem/NavItem';
 import { Navigate, Route, Routes, useLocation, Link } from 'react-router-dom';
 import Stations from './Stations/Stations';
 import Genres from './Genres/Genres';
+import Login from './Login/Login';
 
 
 function App() {
 
   const location = useLocation();
+
+  if (location.pathname === '/login') {
+    return <Login />
+  };
 
   return (
     <Flex>

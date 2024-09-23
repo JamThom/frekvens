@@ -67,18 +67,12 @@ namespace FrekvensApi.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<Station>> PostStation(Station station)
+        public async Task<ActionResult<Station>> PostStation(StationDto station)
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
                 return Unauthorized();
-            }
-
-            var validationResult = this.ValidateModelState();
-            if (validationResult != null)
-            {
-                return validationResult;
             }
 
             var stationUrlError = await StationUrlError(station.StreamUrl);
@@ -93,20 +87,28 @@ namespace FrekvensApi.Controllers
                 return this.SendBadRequest("A station with the same frequency already exists.");
             }
 
-            station.IsAvailable = true;
-            station.CreatedBy = user;
-
-            _context.Stations.Add(station);
+            _context.Stations.Add(new Station
+            {
+                Id = Guid.NewGuid(),
+                Name = station.Name,
+                Frequency = station.Frequency,
+                StreamUrl = station.StreamUrl,
+                IsAvailable = true,
+                GenreId = station.GenreId,
+                Genre = await _context.Genres.FindAsync(station.GenreId),
+                CreatedBy = user
+            });
             await _context.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetStation), new { id = station.Id }, station);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutStation(Guid id, Station station)
+        public async Task<IActionResult> PutStation(Guid id, StationDto station)
         {
+            var currentStation = await _context.Stations.FindAsync(id);
             var user = await _userManager.GetUserAsync(User);
-            if (station.CreatedBy.Id != user.Id)
+            if (currentStation.CreatedBy.Id != user.Id)
             {
                 return Unauthorized();
             }
@@ -221,7 +223,7 @@ namespace FrekvensApi.Controllers
             return null;
         }
 
-        private async Task<ActionResult?> StationFrequencyUnavailable(Station station)
+        private async Task<ActionResult?> StationFrequencyUnavailable(StationDto station)
         {
             var matchingStation = await _context.Stations.FirstOrDefaultAsync(s => s.Frequency == station.Frequency && s.Id != station.Id);
             if (matchingStation != null)
